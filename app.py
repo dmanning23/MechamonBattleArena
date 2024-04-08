@@ -25,7 +25,7 @@ def main():
     #os.environ["OPENAI_API_KEY"] = openAIapikey
 
     st.set_page_config(
-        page_title="Mechamon Pocket Monster Battler",
+        page_title="Mechamon Battle Arena",
         page_icon="🤖⚔️🤖")
     
     container = st.container()
