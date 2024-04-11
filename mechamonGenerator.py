@@ -6,6 +6,9 @@ from mechamonModel import AbilityModel
 
 class MechamonGenerator:
 
+    # 'description': "A list of comma separated values for MidJourney describing the appearance of this pocket monster"
+    # 'description': "A description of the appearance of this pocket monster"
+
     generateMechamonFunctionDef = {
         'name': 'generate_mechamon',
         'description': 'Create a single Mechamon pocket monster',
@@ -18,7 +21,7 @@ class MechamonGenerator:
                 },
                 "appearance":{
                     'type': 'string',
-                    'description': "A description of the appearance of this pocket monster"
+                    'description': "A list of comma separated values for MidJourney describing the appearance of this pocket monster"
                 },
                 "description":{
                     'type': 'string',

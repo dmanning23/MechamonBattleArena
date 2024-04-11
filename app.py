@@ -3,6 +3,9 @@ import os
 import streamlit as st
 from mechamonGenerator import MechamonGenerator
 from battleGenerator import BattleGenerator
+from dalleImageGenerator import DalleImageGenerator
+from sdImageGenerator import SdImageGenerator
+from keys import openAIapikey
 
 def displayMechamon(mechamon):
     st.header(mechamon.name)
@@ -21,8 +24,8 @@ def displayBattle(battle):
     st.subheader(f"WINNER: {battle.winner}!")
 
 def main():
-    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
-    #os.environ["OPENAI_API_KEY"] = openAIapikey
+    #os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    os.environ["OPENAI_API_KEY"] = openAIapikey
 
     st.set_page_config(
         page_title="Mechamon Battle Arena",
@@ -30,6 +33,12 @@ def main():
     
     container = st.container()
     with container:
+
+        mechamonGenerator = MechamonGenerator()
+        battleGenerator = BattleGenerator()
+        #imageGenerator = DalleImageGenerator()
+        imageGenerator = SdImageGenerator()
+        
         with st.form(key="my form", clear_on_submit=False):
 
             #Player 1 text entry
@@ -54,18 +63,24 @@ def main():
                 st.error("Player 2 is not ready")
 
             if player1 and player2:
-                mechamonGenerator = MechamonGenerator()
-                battleGenerator = BattleGenerator()
 
                 #Create the first Mechamon
                 with st.spinner("Creating Player 1 Mechamon..."):
                     mecha1 = mechamonGenerator.Generate(player1)
                     displayMechamon(mecha1)
 
+                #with st.spinner(f"Creating {mecha1.name} artwork..."):
+                    #art1 = imageGenerator.CreateImage(mecha1.appearance)
+                    #st.image(art1)
+
                 #Create the second Mechamon
                 with st.spinner("Creating Player 2 Mechamon..."):
                     mecha2 = mechamonGenerator.Generate(player2)
                     displayMechamon(mecha2)
+
+                #with st.spinner(f"Creating {mecha1.name} artwork..."):
+                    #art2 = imageGenerator.CreateImage(mecha2.appearance)
+                    #st.image(art2)
 
                 #Make them fight!
                 with st.spinner("BATTLING!!!"):
@@ -83,23 +98,35 @@ def main():
                 st.error("Player 2 is not ready")
 
             if player1 and player2:
-                mechamonGenerator = MechamonGenerator()
-                battleGenerator = BattleGenerator()
 
                 #Create the first Mechamon
                 with st.spinner("Creating Player 1 Mechamon..."):
                     mecha1 = mechamonGenerator.Generate(player1)
                     displayMechamon(mecha1)
 
+                #with st.spinner(f"Creating {mecha1.name} artwork..."):
+                    #art1 = imageGenerator.CreateImage(mecha1.appearance)
+                    #st.image(art1)
+
                 #Create the second Mechamon
                 with st.spinner("Creating Player 2 Mechamon..."):
                     mecha2 = mechamonGenerator.Generate(player2)
                     displayMechamon(mecha2)
 
+                #with st.spinner(f"Creating {mecha2.name} artwork..."):
+                    #art2 = imageGenerator.CreateImage(mecha2.appearance)
+                    #st.image(art2)
+
                 #Make them fight!
                 with st.spinner("MERGING!!!"):
                     mecha3 = mechamonGenerator.Merge(mecha1, mecha2)
-                    st.header("MERGED!!!")
-                    displayMechamon(mecha3)
+
+                st.header("MERGED!!!")
+                displayMechamon(mecha3)
+                
+                #with st.spinner(f"Creating {mecha3.name} artwork..."):
+                    #art3 = imageGenerator.CreateImage(mecha3.appearance)
+                    #st.image(art3)
+
 if __name__ == "__main__":
     main()
