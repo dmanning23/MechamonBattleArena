@@ -24,8 +24,8 @@ def displayBattle(battle):
     st.subheader(f"WINNER: {battle.winner}!")
 
 def main():
-    #os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
-    os.environ["OPENAI_API_KEY"] = openAIapikey
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    #os.environ["OPENAI_API_KEY"] = openAIapikey
 
     st.set_page_config(
         page_title="Mechamon Battle Arena",
