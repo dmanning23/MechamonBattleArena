@@ -5,7 +5,7 @@ from mechamonGenerator import MechamonGenerator
 from battleGenerator import BattleGenerator
 from dalleImageGenerator import DalleImageGenerator
 from sdImageGenerator import SdImageGenerator
-from keys import openAIapikey
+#from keys import openAIapikey
 
 def displayMechamon(mechamon):
     st.header(mechamon.name)
