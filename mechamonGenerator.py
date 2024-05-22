@@ -1,15 +1,13 @@
-from langchain.schema.messages import SystemMessage, HumanMessage
-import json
-from openai import OpenAI
 from mechamonModel import MechamonModel
 from mechamonModel import AbilityModel
+from langchain_openai import ChatOpenAI
 
 class MechamonGenerator:
 
     # 'description': "A list of comma separated values for MidJourney describing the appearance of this pocket monster"
     # 'description': "A description of the appearance of this pocket monster"
 
-    generateMechamonFunctionDef = {
+    generate_mechamon = {
         'name': 'generate_mechamon',
         'description': 'Create a single Mechamon pocket monster',
         'parameters': {
@@ -61,17 +59,15 @@ class MechamonGenerator:
     def _generate_ability(self, name, description):
         return AbilityModel(name, description)
     
-    def _parseResponse(self, response_message, available_functions):
-        if response_message.tool_calls and response_message.tool_calls[0].function.arguments:
-            #Which function call was invoked?
-            function_called = response_message.tool_calls[0].function.name
+    def _parseResponse(self, response, available_functions):
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                #Which function call was invoked?
+                function_name = tool_call['name']
 
-            #Extract the arguments from the AI payload
-            function_args  = json.loads(response_message.tool_calls[0].function.arguments)
-            
-            #Call the function with the provided arguments
-            function_to_call = available_functions[function_called]
-            return function_to_call(*list(function_args.values()))
+                #Call the function with the provided arguments
+                function_to_call = available_functions[function_name]
+                return function_to_call(**tool_call['args'])
         else:
             #The LLM didn't call a function but provided a response
             #return response_message.content
@@ -80,16 +76,12 @@ class MechamonGenerator:
     def Generate(self, shortDescription, llm = None):
         if not llm:
             #create the client API
-            llm = OpenAI()
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
 
+        #Add all the messages
         messages = [
             {'role': 'system', 'content': "Given the following short description, create a complete Mechamon Pocket Monster."},
             {'role': 'user', 'content': shortDescription}
-        ]
-
-        #Create the list of function definitions that are available to the LLM
-        functions = [ 
-            { "type": "function", "function": MechamonGenerator.generateMechamonFunctionDef }
         ]
 
         #Once the LLM chooses to call a function, this is the mapping to the Python method
@@ -97,19 +89,17 @@ class MechamonGenerator:
             "generate_mechamon": self._generate_mechamon,
         }
 
-        #Call the LLM...
-        response = llm.chat.completions.create(
-            model = 'gpt-3.5-turbo',
-            temperature=1.0,
-            messages = messages,
-            tool_choice={"type": "function", "function": {"name": "generate_mechamon"}},
-            tools = functions)
-        mechamon = self._parseResponse(response.choices[0].message, available_functions)
+        #Bind the tools and call the LLM
+        llm_with_tools = llm.bind_tools(tools=[MechamonGenerator.generate_mechamon], tool_choice="required")
+        response = llm_with_tools.invoke(messages)
+
+        #Parse the response from the LLM
+        mechamon = self._parseResponse(response, available_functions)
         return mechamon
     
     def Merge(self, monster1, monster2, llm = None):
         if not llm:
-            llm = OpenAI()
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5)
 
         messages = [
             {'role': 'system', 'content': f'Two Mechamon Pocket Monsters are merging into a third. Given the following list of Mechamon and the abilities of each Mechamon, generate third Mechamon with abilities that are a blended combination of the originals.'},
@@ -123,19 +113,12 @@ class MechamonGenerator:
         for ability in monster2.abilities:
             messages.append({'role': 'system', 'content': f'{monster2.name} ability: {ability.name}: {ability.description}'})
 
-        functions = [ 
-            { "type": "function", "function": MechamonGenerator.generateMechamonFunctionDef }
-        ]
         available_functions = {
             "generate_mechamon": self._generate_mechamon,
         }
         
-        response = llm.chat.completions.create(
-            model = 'gpt-3.5-turbo',
-            temperature=0.6,
-            messages = messages,
-            tool_choice={"type": "function", "function": {"name": "generate_mechamon"}},
-            tools = functions)
-        
-        conversation = self._parseResponse(response.choices[0].message, available_functions)
-        return conversation
+        llm_with_tools = llm.bind_tools(tools=[MechamonGenerator.generate_mechamon], tool_choice="required")
+        response = llm_with_tools.invoke(messages)
+
+        mechamon = self._parseResponse(response, available_functions)
+        return mechamon

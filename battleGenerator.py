@@ -1,11 +1,10 @@
-import json
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
 from battleModel import AttackModel
 from battleModel import BattleModel
 
 class BattleGenerator():
 
-    createBattleFunctionDef = {
+    create_battle = {
         'name': 'create_battle',
         'description': 'Create a battle',
         'parameters': {
@@ -63,20 +62,18 @@ class BattleGenerator():
     def _generate_attack(self, name, description, result):
         return AttackModel(name, description, result)
     
-    def _parseResponse(self, response_message, available_functions):
-        if response_message.tool_calls and response_message.tool_calls[0].function.arguments:
-            function_called = response_message.tool_calls[0].function.name
-            function_args  = json.loads(response_message.tool_calls[0].function.arguments)
-            function_to_call = available_functions[function_called]
-            return function_to_call(*list(function_args.values()))
+    def _parseResponse(self, response, available_functions):
+        if response.tool_calls:
+            for tool_call in response.tool_calls:
+                function_name = tool_call['name']
+                function_to_call = available_functions[function_name]
+                return function_to_call(**tool_call['args'])
         else:
-            #The LLM didn't call a function but provided a response
-            #return response_message.content
             return None
         
     def Battle(self, monster1, monster2, llm = None):
         if not llm:
-            llm = OpenAI()
+            llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.6)
 
         messages = [
             {'role': 'system', 'content': f'Two Mechamon Pocket Monsters are having a battle. Given the following list of Mechamon in the battle and the abilities of each Mechamon, generate a furious battle between them. Make sure the battle includes an epic climax and a clear winner!'},
@@ -90,19 +87,12 @@ class BattleGenerator():
         for ability in monster2.abilities:
             messages.append({'role': 'system', 'content': f'{monster2.name} ability: {ability.name}: {ability.description}'})
 
-        functions = [ 
-            { "type": "function", "function": BattleGenerator.createBattleFunctionDef }
-        ]
         available_functions = {
             "create_battle": self._create_battle,
         }
-        
-        response = llm.chat.completions.create(
-            model = 'gpt-3.5-turbo',
-            temperature=0.6,
-            messages = messages,
-            tool_choice={"type": "function", "function": {"name": "create_battle"}},
-            tools = functions)
-        
-        conversation = self._parseResponse(response.choices[0].message, available_functions)
-        return conversation
+
+        llm_with_tools = llm.bind_tools(tools=[BattleGenerator.create_battle], tool_choice="required")
+        response = llm_with_tools.invoke(messages)
+
+        battle = self._parseResponse(response, available_functions)
+        return battle
